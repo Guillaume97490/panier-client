@@ -1,6 +1,7 @@
 const DATABASE = require('./env.database');
 const Sequelize = require('sequelize');
 if (process.env.CLEARDB_DATABASE_URL){
+    const DATABASE = {};
     DATABASE.LOCAL.DBNAME = process.env.DB;
     DATABASE.LOCAL.USERNAME = process.env.USER;
     DATABASE.LOCAL.PASSWORD = process.env.PASSWORD;
