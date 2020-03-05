@@ -1,4 +1,10 @@
-let DATABASE = require('./env.database');
+let DATABASE;
+
+try {
+DATABASE = require('./env.database');
+    
+} catch (error) { 
+}
 const Sequelize = require('sequelize');
 
 
