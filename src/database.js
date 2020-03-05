@@ -11,7 +11,7 @@ if (process.env.CLEARDB_DATABASE_URL){
     const sequelize = new Sequelize(DATABASE.LOCAL.DBNAME, DATABASE.LOCAL.USERNAME, DATABASE.LOCAL.PASSWORD, { // nom de la BDD, username, password
         host: process.env.HOST||'localhost',
         dialect: 'mysql',
-        logging: false,//passer a true pour voir les différentes requêtes effectuées par l'ORM
+        logging: true,//passer a true pour voir les différentes requêtes effectuées par l'ORM
     });
     
     return module.exports = sequelize;
