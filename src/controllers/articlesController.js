@@ -1,4 +1,5 @@
 const articlesController = {};
+
 const Article = require('../models/article.js')
 
 /**
@@ -39,14 +40,27 @@ articlesController.add = (req, res) => {
         title: "Ajouter un article"
     })
 }
-articlesController.create = (req, res) => {
+articlesController.create = async(req, res) => {
+    console.log(req.body);
+    console.log(req.files);
+
     Article.create({
         nom: req.body.nom_article,
         detail: req.body.detail_article,
         prix: req.body.prix_article,
-        image: req.body.image_article,
-        categories_id: Number(req.body.categorie_article)
-    }).then(res.redirect('/articles'))
+        //image: req.body.image_article,
+        categories_id: Number(req.body.categorie_article),
+        image : req.files.image_article.name,
+
+        
+    });
+    let sampleFile = req.files.image_article; // nom du champ image
+
+    // il faut que le dossier upload existe... ;)
+    const file = await sampleFile.mv(mainDir+'/public/uploads/'+sampleFile.name, function(err) { 
+      if (err) return res.status(500).send(err);
+    })
+    res.redirect('/articles') 
 }
 
 /**

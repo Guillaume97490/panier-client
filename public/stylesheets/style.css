@@ -6,10 +6,13 @@
 
 body {
   font: 14px "Nunito", "Lucida Grande", Helvetica, Arial, sans-serif;
-  background-color: #F7F6EE;
+  background-color: #FADA95	;
 }
 
 a {
   color: #00B7FF;
+}
+#header-jumbotron{
+  background-color: #2A90AB;
 }
 

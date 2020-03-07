@@ -4,8 +4,9 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var bodyParser = require('body-parser');
-var session = require('express-session');
+// var session = require('express-session');
 const fileUpload = require('express-fileupload');
+var cookieSession = require('cookie-session')
 
 var indexRouter = require('./src/routes/indexRoute');
 var adminRouter = require('./src/routes/adminRoute');
@@ -17,11 +18,15 @@ var categoriesArticles = require('./src/routes/categoriesArticlesRoute');
 
 var app = express();
 
+mainDir = __dirname;
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
+
 app.use(fileUpload());
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -30,19 +35,27 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(session({
-  secret: "Your secret key",
-  // cookie: { secure: true },
-  resave: false,
-  saveUninitialized: true
-}));
+// app.use(session({
+//   secret: "Your secret key",
+//   // cookie: { secure: true },
+//   resave: false,
+//   saveUninitialized: true
+// }));
+
+app.use(cookieSession({
+  name: 'boutique-panier-client',
+  keys: ["Your secret key"],
+
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}))
 
 function checkSignIn(req, res, next){
   if(req.session.user){
      next();     //If session exists, proceed to page
   } else {
      var err = new Error("Not logged in!");
-     console.log(req.session.user);
+    //  console.log(req.session.user);
     //  next(err);  //Error, trying to access unauthorized page!
     res.redirect('/')
   }
@@ -57,9 +70,13 @@ app.get('/*', function(req, res, next) {
   if (req.session.user){
     res.locals.user.nom = req.session.user.prenom; // nom de l'utilisateur connecté (dans le menu) accessible pour toutes les vues
     res.locals.user.role = req.session.user.role;
+    res.locals.user.id = req.session.user.id;
+    res.locals.user.panier = req.session.user.paniers[0]; // le panier en cours, non validé
   }
   next();
 });
+
+
 
 
 app.use('/',indexRouter);
@@ -86,10 +103,9 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-
-//Action upload du fichier image
+//Route pour uploads image
 app.post('/uploads', function (req, res) {
-  console.log(req.files.image_article); //requette.files.nom du file 
+  console.log(req.files.image_article.name); //requette.files.nom du file 
 
 
 });
@@ -98,5 +114,11 @@ app.use(fileUpload({
     fileSize: 50 * 1024 * 1024
   },
 }));
+app.use(fileUpload({
+  useTempFiles: true,
+  tempFileDir: 'C:\tmp' //dossier temporaire
+}));
+
+
 
 module.exports = app;
