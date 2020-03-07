@@ -3,19 +3,22 @@ const paniersControlleur = {};
 const Panier = require('../models/panier.js');
 const LignePanier = require('../models/articles_has_paniers.js');
 const Article = require('../models/article.js');
+const User = require('../models/user.js');
+
 
 Panier.belongsToMany(Article,{foreignKey: 'paniers_id', through: 'articles_has_paniers' }); // le panier appartien à un utilisateur.
 Article.belongsToMany(Panier,{foreignKey: 'articles_id', through: 'articles_has_paniers' }); // le panier appartien à un utilisateur.
-
+User.hasMany(Panier,{foreignKey: 'utilisateur_id'}) // Un utilisateur peut faire plusieurs panier
+Panier.belongsTo(User,{foreignKey: 'utilisateur_id'}) // Un panier appartien à un seul utilisateur
 
 paniersControlleur.list = (req, res) => { // GET : /paniers
-    Panier.findAll({ include: [ { model: Article, require: true } ]}).then(paniers => { // inclus les articles d'un panier
+   // Panier.findAll({ include: [ { model: Article, require: true } ]}).then(paniers => { // inclus les articles d'un panier
         // console.log(paniers)
         res.render('paniers/index', {
-            paniers: paniers,
+     //       paniers: paniers,
             title: "Paniers"
         })
-    })
+  //  })
 }
 paniersControlleur.create = (req, res) => { // POST : /paniers/create
     Panier.create({

@@ -23,14 +23,15 @@ $(document).ready(function() {
 
     function listUsers() {
         $.get('users/jsonList', function(users) {
-            if (users.data > 1) {
+            if (users.data) {
             let tableHead = `
             <table class="table table-striped">
             <thead>
             <tr>
             <th scope="col">#</th>
             <th scope="col">Nom</th>
-            <th scope="col">Mail</th>
+            <th scope="col">Prénom</th>
+            <th scope="col">EMail</th>
             <th scope="col">Adresse</th>
             <th scope="col">Téléphone</th>
             <th scope="col">Actions</th>
@@ -39,12 +40,13 @@ $(document).ready(function() {
             <tbody>`
             let tableEnd = `</tbody></table>`
             let rows = "";
-            users.forEach((user, index) => {
+            users.data.forEach((user, index) => {
                 let row = `
                 <tr>
                     <th scope="row">${index + 1}</th>
                     <td>${user.nom}</td>
-                    <td>${user.mail}</td>
+                    <td>${user.prenom}</td>
+                    <td>${user.email}</td>
                     <td>${user.adresse}</td>
                     <td>${user.telephone}</td>
                     <td>
@@ -65,7 +67,6 @@ $(document).ready(function() {
     function listCategories() {
         $.get('categories/jsonList', function(categories) {
             if (categories.data) {
-            console.log(categories);
             let tableHead = `
             <table class="table table-striped">
             <thead>
@@ -144,7 +145,8 @@ $(document).ready(function() {
     }
 
     function addUsers() {
-        $('#panel-add').html('');
+        let btn = '<a href="/users/add" target="blank_" class="btn btn-success disabled" disabled>Ajouter un utilisateur</a>';
+        $('#panel-add').html(btn);
     };
     function addCategories() {
         let btn = '<a href="/categories/add" target="blank_" class="btn btn-success">Ajouter une catégorie</a>';
