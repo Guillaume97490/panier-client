@@ -1,7 +1,13 @@
 const articlesController = {};
 const paginate = require('express-paginate');
 const Article = require('../models/article.js');
+const Comment = require('../models/comment.js');
+const User = require('../models/user.js');
 const mainDir = __dirname;
+const path = require('path');
+const sharp = require('sharp');
+var fs = require('fs');
+
 
 /**
  * @method GET
@@ -55,19 +61,49 @@ articlesController.jsonList = (req, res) => {
         }
     })
 }
+
+articlesController.detail = async(req,res) => {
+
+    article = await Article.findOne({
+        where: {id: req.params.id},
+        include:[{model:Comment,
+        include:[{model:User}]},
+        ]
+    });
+    if (!article) return res.redirect('/');
+
+    console.log(article.commentaires)
+
+    res.render('articles/detail', {
+        title: `${article.nom}, details`,
+        article
+    })
+
+    
+}
 articlesController.add = (req, res) => {
     res.render('articles/_addForm', {
         title: "Ajouter un article"
     })
 }
 articlesController.create = async(req, res) => {
-    console.log(req.body);
-    console.log(req.files);
+    // console.log(req.body);
+    // console.log(req.files);
 
-    let sampleFile = req.files.image_article; // nom du champ image
+    let uploadedFile = req.files.image_article; // nom du champ image
 
     // il faut que le dossier upload existe... ;)
-    await sampleFile.mv('public/uploads/'+sampleFile.name, err => {if (err) return res.status(500).send(err)});
+    await uploadedFile.mv('public/uploads/'+uploadedFile.name, err => {if (err) return res.status(500).send(err)});
+    fileName = path.parse(uploadedFile.name).name + ".jpg"; // remplace l'extension originale par .jpg
+
+    file = await sharp(uploadedFile.data) // resize si hauteur plus haut que 400 et converti en jpg
+        .resize({
+            height: 400, // resize si hauteur plus haut que 400px
+            withoutEnlargement: true
+        })
+        .toFormat("jpeg") // converti le fichier en jpg
+        .jpeg({ quality: 90 })
+        .toFile(`public/uploads/${fileName}`);
 
     await Article.create({
         nom: req.body.nom_article,
@@ -75,10 +111,10 @@ articlesController.create = async(req, res) => {
         prix: req.body.prix_article,
         // image: req.body.image_article,
         categories_id: Number(req.body.categorie_article),
-        image : sampleFile.name,
+        image : fileName,
     });
 
-    res.redirect('/articles');
+    res.redirect('/admin?tab=articles');
 }
 
 /**
@@ -90,7 +126,7 @@ articlesController.edit = (req, res) => {
         where: {id: req.params.id}
 
     }).then(article => {
-        console.log(article)
+        // console.log(article)
         res.render('articles/_editForm',{
             title: "Modifier un article",
             article: article
@@ -114,18 +150,29 @@ articlesController.update = async(req, res) => {
     };
 
     if (req.files){
-        let imgFile = req.files.image_article;
-        const file = await imgFile.mv('public/uploads/'+imgFile.name, err => {if (err) return res.status(500).send(err)});
-        updatedArticle.image = imgFile.name;
+        let uploadedFile = req.files.image_article;
+        await uploadedFile.mv('public/uploads/'+uploadedFile.name, err => {if (err) return res.status(500).send(err)});
+        
+        fileName = path.parse(uploadedFile.name).name + ".jpg"; // remplace l'extension originale par .jpg
+        file = await sharp(uploadedFile.data) 
+            .resize({ // resize si hauteur plus haut que 400px
+                height: 400,
+                withoutEnlargement: true
+            })
+            .toFormat("jpeg") // converti le fichier en jpg
+            .jpeg({ quality: 90 })
+            .toFile(`public/uploads/${fileName}`);
+        
+            updatedArticle.image = fileName;
     };
-    
+
     await Article.update(updatedArticle, {
         where:{
             id:req.params.id
         }
     });
 
-    res.redirect('/articles')
+    res.redirect('/admin?tab=articles')
     
 }
 
@@ -133,7 +180,7 @@ articlesController.update = async(req, res) => {
  * @method GET
  * @url /articles/delete/:id
  */
-articlesController.delete = (req, res) => {
+articlesController.delete = async(req, res) => {
     if (!req.session.user || req.session.user.role !== 1) {
         error = {status: '403',message: 'Permission non accordée'}
         return res.status(403).render('errors/index', {
@@ -141,13 +188,93 @@ articlesController.delete = (req, res) => {
         });
     }
 
-    Article.destroy({
-        where: {
-            id: req.params.id
+    imageName = await Article.findOne({ // imageName.image == imageFilename
+        where: {id: req.params.id},
+        attributes:['image'],raw:true});
+
+    if (imageName){
+        imageTimesUsed = await Article.count({ // recherche le nombre de fois que l'image est utilisé par un article
+            where: {image: imageName.image},raw:true});
+
+        if (imageTimesUsed == 1) { // Si il est utiliser une fois on peut le supprimer
+            fs.exists(`public/uploads/${imageName.image}`,(exists)=> {
+                if (exists) fs.unlink(`public/uploads/${imageName.image}`, (err) => {if (err) throw err});
+            })
+            
         }
-    }).then(() => {
-        res.redirect('/articles')
+    }
+
+    await Article.destroy({
+        where: {id: req.params.id}})
+
+    res.redirect('/admin?tab=articles')
+    
+}
+
+
+
+
+
+
+///////////////////////////////////////////////////
+articlesController.addComment = async (req,res) => {
+    await Comment.create({
+        description: req.body.nouveau_comentaire,
+        utilisateurs_id: req.session.user.id,
+        articles_id: req.params.id
+    });
+    res.redirect(`/articles/detail/${req.params.id}`)
+}
+
+articlesController.editComment = (req, res) => {
+    Comment.findOne({
+        where: {id: req.params.idcomment}
+
+    })
+    .then(comment => {
+        console.log(comment.id)
+        res.render('articles/edit_comment',{
+            title: "Modifier un commentaire",
+            comment: comment,
+            idarticle:req.params.idarticle
+        })
     })
 }
+
+
+articlesController.updateComment  = async(req, res) => {
+    
+    console.log(req.params.idcomment);
+    await Comment.findOne({
+        
+        where: {id: req.params.idcomment}});
+
+    updateComment = {
+        description: req.body.nouveau_comentaire,
+        
+   
+    };
+    
+    await Comment.update(updateComment, {
+        where:{
+            id:req.params.idcomment
+        }
+    });
+console.log(req.params.idarticle)  
+  res.redirect(`/articles/detail/${req.params.idarticle}`)
+    
+}
+
+articlesController.deleteComment = (req, res) => {
+    Comment.destroy({
+        where: {
+            id: req.params.idcomment
+        }
+    }).then(() => {
+        res.redirect(`/articles/detail/${req.params.idarticle}`)
+    })
+}
+/////////////////////////////////////////////////////
+
 
 module.exports = articlesController;
