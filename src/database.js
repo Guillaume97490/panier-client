@@ -1,13 +1,8 @@
-let DATABASE = {};
-
-try {
-DATABASE = require('./env.database');
-    
-} catch (error) { 
-}
+const DATABASE = require('./env.database');
 const Sequelize = require('sequelize');
 
 const env = process.env.NODE_ENV;
+console.log(env);
 
 if (env === "development") {
     let sequelize = new Sequelize(process.env.LOCAL_DB_NAME, process.env.LOCAL_DB_USERNAME, process.env.LOCAL_DB_PASSWORD, { 
@@ -31,5 +26,3 @@ if (env === "production") {
     //on exporte pour utiliser notre connexion depuis les autre fichiers.
     var exports = module.exports = {};
     exports.sequelize = sequelize;
-}
-
