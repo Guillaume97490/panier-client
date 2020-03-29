@@ -7,6 +7,8 @@ var bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
 var cookieSession = require('cookie-session')
 
+require("dotenv").config();
+
 var indexRouter = require('./src/routes/indexRoute');
 var adminRouter = require('./src/routes/adminRoute');
 var usersRouter = require('./src/routes/usersRoute');
@@ -75,9 +77,6 @@ app.get('/*', async function(req, res, next) {
   res.locals.categories = categories;
   next();
 });
-
-
-
 
 app.use('/',indexRouter);
 app.use('/admin', adminRouter);
