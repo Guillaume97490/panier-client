@@ -1,4 +1,3 @@
-const DATABASE = require('./env.database');
 const Sequelize = require('sequelize');
 
 const env = process.env.NODE_ENV;
